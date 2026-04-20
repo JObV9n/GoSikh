@@ -8,6 +8,12 @@
 /vendor/
 /go.sum
 /go.mod
+# Build artifacts
+/build/
+/dist/
+/out/
+*.o
+*.a
 
 # Node.js / Frontend
 /node_modules/
@@ -27,6 +33,9 @@
 /frontend/.vuepress/dist/
 /frontend/.svelte-kit/
 /frontend/.cache/
+
+# Backend
+/backend/bin/*
 
 # Docker
 .dockerignore
