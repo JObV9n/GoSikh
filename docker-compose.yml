@@ -1,0 +1,68 @@
+name: learning-platform
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: learning-platform-backend
+    environment:
+      PORT: 8080
+      JWT_SECRET: supersecret
+      DB_PATH: /app/data/app.db
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5174}
+      RUNNERS_DIR: /app/sandbox/runners
+      EXECUTION_TIMEOUT: 20s
+    volumes:
+      - ./backend/data:/app/data
+      - ./sandbox/runners:/app/sandbox/runners
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9080:8080"
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  frontend:
+    image: node:22-alpine
+    container_name: learning-platform-frontend
+    working_dir: /app
+    command:
+      - sh
+      - -lc
+      - >-
+        corepack enable &&
+        if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then pnpm install --frozen-lockfile; fi &&
+        pnpm dev --host 0.0.0.0 --port 5173
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: /api
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5174}:5173"
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  runner-go:
+    image: learning-platform-runner-go:latest
+    build:
+      context: ./sandbox/runners/go
+    command: ["tail", "-f", "/dev/null"]
+    profiles: ["runners"]
+    networks:
+      - app-net
+    volumes:
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
+  frontend-node-modules:

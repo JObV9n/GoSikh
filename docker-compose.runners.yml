@@ -1,0 +1,29 @@
+name: learning-platform-runners
+
+services:
+  runner-go:
+    image: learning-platform-runner-go:latest
+    build:
+      context: ./sandbox/runners/go
+    command: ["tail", "-f", "/dev/null"]
+    tty: true
+    stdin_open: true
+    profiles: ["go"]
+    networks:
+      - runners-net
+    volumes:
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    healthcheck:
+      test: ["CMD", "go", "version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  runners-net:
+    driver: bridge
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
